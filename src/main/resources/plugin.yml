@@ -1,0 +1,25 @@
+name: ManhuntCore
+main: me.frankthedev.manhuntcore.ManhuntCore
+version: ${project.version}
+api-version: 1.16
+author: Frank
+depend: []
+description: Scalable plugin for simulating Dream's Minecraft Manhunt videos as accurately as possible.
+commands:
+  spectate:
+    description: Spectate a Manhunt game for the specified player.
+    usage: /spectate <player name>
+  unspectate:
+    description: Unspectate a Manhunt game.
+    usage: /unspectate
+  manhunt:
+    description: Root command for Manhunt-related commands.
+  modify:
+    description: Brings up the GUI to modify queued Manhunt games.
+    usage: /modify
+  forceend:
+    description: Forcefully end a Manhunt game with the specified game key.
+    usage: /forceend <game key>
+  gamekey:
+    description: Bring up your Manhunt game key.
+    usage: /gamekey
