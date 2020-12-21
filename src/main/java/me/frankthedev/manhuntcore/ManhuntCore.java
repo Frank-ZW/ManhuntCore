@@ -44,14 +44,14 @@ public final class ManhuntCore extends JavaPlugin {
 		PaperLib.suggestPaper(this);
 		instance = this;
 		this.registerCommands();
+		ManhuntManager.enable(this);
+		boolean shutdown = this.readConfig(true);
 		NMSManager.getInstance();
 		PacketManager.getInstance();
 		GuiManager.getInstance();
-		ManhuntManager.enable(this);
 		PlayerManager.enable(this);
 		QueueManager.enable();
 		this.saveDefaultConfig();
-		boolean shutdown = this.readConfig(true);
 		this.playerListeners = new PlayerListeners(this);
 		this.guiListeners = new GuiListeners();
 		this.spectatorListeners = new SpectatorListeners();
@@ -115,7 +115,7 @@ public final class ManhuntCore extends JavaPlugin {
 
 			return false;
 		} catch (Throwable t) {
-			this.getLogger().log(Level.WARNING, "Failed to retrieve X, Y, Z coordinates for the lobby spawn location.");
+			this.getLogger().log(Level.WARNING, "Failed to retrieve X, Y, Z coordinates for the lobby spawn location.", t);
 			return true;
 		}
 	}

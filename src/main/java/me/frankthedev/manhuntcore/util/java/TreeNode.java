@@ -1,83 +1,54 @@
 package me.frankthedev.manhuntcore.util.java;
 
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class TreeNode<K, V> {
+public class TreeNode {
 
-	private K key;
-	private V value;
-	private TreeNode<K, V> parent;
-	private final Map<K, TreeNode<K, V>> children;
+	private Map<Integer, ItemStack> items;              // Holds index and items for the current Gui
+	private TreeNode parent;                            // Holds the node for the parent Gui
+	private final Map<Material, TreeNode> children;     // Holds the List of children nodes
 
-	public TreeNode(K key, V value) {
-		this.key = key;
-		this.value = value;
+	public TreeNode(Map<Integer, ItemStack> items) {
+		this.items = items;
+		this.parent = null;
 		this.children = new HashMap<>();
 	}
 
-	public TreeNode<K, V> put(K key, V value) {
-		TreeNode<K, V> child = new TreeNode<>(key, value);
-		child.setParent(this);
-		this.children.put(key, child);
-		return child;
-	}
-
-	public TreeNode<K, V> remove(K key) {
-		return this.children.remove(key);
-	}
-
-	@Nullable
-	public TreeNode<K, V> get(K key) {
-		return this.children.get(key);
-	}
-
-	public K getKey() {
-		return this.key;
-	}
-
-	public void setKey(K key) {
-		this.key = key;
-	}
-
-	public V getValue() {
-		return this.value;
-	}
-
-	public void setValue(V value) {
-		this.value = value;
-	}
-
-	public TreeNode<K, V> getParent() {
+	public TreeNode getParent() {
 		return this.parent;
 	}
 
-	public void setParent(TreeNode<K, V> parent) {
+	public void setParent(TreeNode parent) {
 		this.parent = parent;
 	}
 
-	@Override
-	public int hashCode() {
-		final int prime = 17;
-		int result = 1;
-		result = result * prime + this.key.hashCode();
-		result = result * prime + this.value.hashCode();
-		return result;
+	public void addChild(Material type, TreeNode child) {
+		this.children.put(type, child);
 	}
 
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == this) {
-			return true;
-		}
+	public void removeChild(Material material) {
+		this.children.remove(material);
+	}
 
-		if (!(obj instanceof TreeNode)) {
-			return false;
-		}
+	public Map<Integer, ItemStack> getItems() {
+		return this.items;
+	}
 
-		TreeNode<?, ?> node = (TreeNode<?, ?>) obj;
-		return this.key.equals(node.getKey()) && this.value.equals(node.getValue());
+	public void setItems(Map<Integer, ItemStack> items) {
+		this.items = items;
+	}
+
+	@Nullable
+	public TreeNode getChild(Material material) {
+		return this.children.get(material);
+	}
+
+	public Map<Material, TreeNode> getChildren() {
+		return this.children;
 	}
 }

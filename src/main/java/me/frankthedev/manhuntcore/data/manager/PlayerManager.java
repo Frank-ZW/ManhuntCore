@@ -10,9 +10,9 @@ import me.frankthedev.manhuntcore.util.bukkit.PlayerUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.*;
@@ -23,13 +23,14 @@ public class PlayerManager {
 	private final ManhuntCore plugin;
 	private final Map<UUID, PlayerData> players;
 	private final Map<UUID, Manhunt> disconnectionMap;         // Map to hold player disconnection issues.
-	private final ExecutorService executors = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setNameFormat("ManhuntCore Player Thread").build());
+	private final ExecutorService executors;
 
 	public PlayerManager(ManhuntCore plugin) {
 		this.plugin = plugin;
 		this.players = new ConcurrentHashMap<>();
-		this.disconnectionMap = new HashMap<>();
-		this.executePlayerThread(() -> Bukkit.getOnlinePlayers().forEach(this::addPlayer));
+		this.disconnectionMap = new ConcurrentHashMap<>();
+		this.executors = Executors.newFixedThreadPool(2, new ThreadFactoryBuilder().setNameFormat("ManhuntCore Player Threads").build());
+		this.executors.execute(() -> Bukkit.getOnlinePlayers().forEach(this::addPlayer));
 	}
 
 	public static void enable(ManhuntCore plugin) {
@@ -37,11 +38,10 @@ public class PlayerManager {
 	}
 
 	public static void disable() {
-		instance.executors.execute(() -> instance.plugin.getServer().getOnlinePlayers().forEach(instance::removePlayer));
+		instance.executors.execute(() -> Bukkit.getOnlinePlayers().forEach(instance::removePlayer));
 		instance.executors.shutdown();
 		instance.disconnectionMap.clear();
 		instance.players.clear();
-		instance = null;
 	}
 
 	public static PlayerManager getInstance() {
@@ -75,7 +75,6 @@ public class PlayerManager {
 		}
 
 		this.players.put(player.getUniqueId(), playerData);
-//		Bukkit.getLogger().info(ChatColor.GREEN + "Added " + playerData.getName());
 //		PacketManager.getInstance().injectPlayerData(playerData);
 	}
 
@@ -104,7 +103,6 @@ public class PlayerManager {
 				}
 			}, TimeUnit.MINUTES.toSeconds(3) * 20);
 		}
-
 //		PacketManager.getInstance().uninjectPlayerData(playerData);
 	}
 
@@ -115,12 +113,12 @@ public class PlayerManager {
 	 *
 	 * @param manhunt   The Manhunt game to be removed from the disconnect map.
 	 */
-	public void removeFromDisconnectMap(Manhunt manhunt) {
-		for (Map.Entry<UUID, Manhunt> entry : this.disconnectionMap.entrySet()) {
-			if (entry.getValue().getGameKey() == manhunt.getGameKey()) {
+	public void removeFromDisconnectMap(@NotNull Manhunt manhunt) {
+		this.disconnectionMap.entrySet().parallelStream().forEach(entry -> {
+			if (manhunt.equals(entry.getValue())) {
 				this.disconnectionMap.remove(entry.getKey());
 			}
-		}
+		});
 	}
 
 	/**

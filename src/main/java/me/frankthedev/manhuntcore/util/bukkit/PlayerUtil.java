@@ -22,6 +22,9 @@ public class PlayerUtil {
 		player.setLevel(0);
 		player.setExp(0.0F);
 		player.setTotalExperience(0);
+		player.setFlying(false);
+		player.setAllowFlight(false);
+		player.setFallDistance(0.0F);
 		player.setBedSpawnLocation(null);
 		player.getInventory().clear();
 		player.setGameMode(GameMode.SURVIVAL);
@@ -69,8 +72,7 @@ public class PlayerUtil {
 		spectate.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0, true, true, true));
 	}
 
-	public static void unsetSpectator(Player player, PlayerData playerData) {
-		playerData.setSpectateManhunt(null);
+	public static void unsetSpectator(Player player) {
 		player.setHealth(20.0D);
 		player.setFoodLevel(20);
 		player.setSaturation(5.0F);

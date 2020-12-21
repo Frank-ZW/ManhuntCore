@@ -32,10 +32,15 @@ public class UnspectateCommand implements CommandExecutor {
 			return true;
 		}
 
-		if (args.length != 0) {
-			player.sendMessage(ChatColor.RED + "To leave a game as a spectator, type /unspectate.");
+		if (!playerData.isInSpectateManhunt()) {
+			player.sendMessage(ChatColor.RED + "You are currently not spectating a Manhunt game.");
+			return true;
+		}
+
+		if (args.length == 0) {
+			ManhuntManager.getInstance().removePlayer(playerData.getSpectateManhunt(), playerData);
 		} else {
-			ManhuntManager.getInstance().removeSpectator(player, playerData);
+			player.sendMessage(ChatColor.RED + "To unspectate a Manhunt game, type /unspectate.");
 		}
 
 		return true;

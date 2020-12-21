@@ -30,6 +30,7 @@ public class CountdownRunnable extends BukkitRunnable {
 			this.manhunt.startManhunt();
 			ManhuntManager.getInstance().addManhunt(this.manhunt);
 			this.cancel();
+			return;
 		}
 
 		this.seconds--;

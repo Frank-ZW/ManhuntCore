@@ -101,7 +101,7 @@ public class PlayerListeners implements Listener {
 
 		manhunt.broadcast(StringUtils.replace(e.getDeathMessage(), "[Player Tracker]", ItemUtil.PLAYER_TRACKER));
 		e.setDeathMessage("");
-		if (manhunt.getGameModeType() == Manhunt.GameModeType.PRACTICE) {
+		if (manhunt.getGameModeType() == Manhunt.GamemodeType.PRACTICE) {
 			e.getDrops().clear();
 			return;
 		}
@@ -144,7 +144,7 @@ public class PlayerListeners implements Listener {
 		if (playerData.isInActiveManhunt()) {
 			Manhunt manhunt = playerData.getActiveManhunt();
 			e.setRespawnLocation(player.getBedSpawnLocation() == null ? manhunt.getOverworld().getSpawnLocation() : player.getBedSpawnLocation());
-			if (manhunt.getGameModeType() == Manhunt.GameModeType.PRACTICE) {
+			if (manhunt.getGameModeType() == Manhunt.GamemodeType.PRACTICE) {
 				PlayerUtil.applyKit(player, manhunt.isSpeedrunner(player.getUniqueId()));
 				return;
 			}

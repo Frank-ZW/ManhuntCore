@@ -213,7 +213,7 @@ public class SpectatorListeners implements Listener {
 						page.addItem(index, new CompassClickable(spectator, this, items));
 					}
 
-					GuiManager.getInstance().addFolder(folder);
+					GuiManager.getInstance().addFolder(spectator.getUniqueId(), folder);
 					folder.setCurrentPage(page);
 					folder.openGui(spectator);
 				}
@@ -222,8 +222,8 @@ public class SpectatorListeners implements Listener {
 			case RED_BED:
 				ItemMeta bedMeta = item.getItemMeta();
 				if (ItemUtil.SPECTATOR_LEAVE.equals(bedMeta.getDisplayName())) {
-					ManhuntManager.getInstance().removeSpectator(spectator, spectatorData);
 					e.setCancelled(true);
+					ManhuntManager.getInstance().removePlayer(spectatorData.getSpectateManhunt(), spectatorData);
 				}
 
 				break;

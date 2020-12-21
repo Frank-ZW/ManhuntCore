@@ -47,15 +47,14 @@ public class ModifyCommand implements CommandExecutor {
 			return true;
 		}
 
-//		GuiManager.getInstance().openModifyMenu(player);
+//		Manhunt manhunt = playerData.getQueuedManhunt();
+//		GuiManager.getInstance().createFolder(manhunt, player, ChatColor.DARK_GREEN + "Manhunt Settings", 27, 10, 10, 3, ModifyClickable.class, new ArrayList<>(Arrays.asList(
+//				ItemUtil.createItemStack(Material.DIAMOND_PICKAXE, ChatColor.GREEN + "Speedrunner Modifiers", ChatColor.BLUE + "Click to add or remove modifiers", ChatColor.BLUE + "for the speedrunner."),
+//				ItemUtil.createItemStack(Material.GRASS_BLOCK, ChatColor.GREEN + "Terrain Generator", ChatColor.BLUE + "Click to change the world generation type", ChatColor.BLUE + "to Amplified, Large Biomes, Normal."),
+//				ItemUtil.createItemStack(Material.DIAMOND_SWORD, ChatColor.GREEN + "Manhunt Gamemode", ChatColor.BLUE + "Click to change the gamemode to Practice PVP", ChatColor.BLUE + "Mini Manhunt, or plain-old Vanilla.")
+//		))).openGui(player);
 
-		Manhunt manhunt = playerData.getQueuedManhunt();
-		GuiManager.getInstance().createFolder(manhunt, player, ChatColor.DARK_GREEN + "Manhunt Settings", 27, 10, 10, 3, ModifyClickable.class, new ArrayList<>(Arrays.asList(
-				ItemUtil.createItemStack(Material.DIAMOND_PICKAXE, ChatColor.GREEN + "Speedrunner Modifiers", ChatColor.BLUE + "Click to add or remove modifiers", ChatColor.BLUE + "for the speedrunner."),
-				ItemUtil.createItemStack(Material.GRASS_BLOCK, ChatColor.GREEN + "Terrain Generator", ChatColor.BLUE + "Click to change the world generation type", ChatColor.BLUE + "to Amplified, Large Biomes, Normal."),
-				ItemUtil.createItemStack(Material.DIAMOND_SWORD, ChatColor.GREEN + "Manhunt Gamemode", ChatColor.BLUE + "Click to change the gamemode to Practice PVP", ChatColor.BLUE + "Mini Manhunt, or plain-old Vanilla.")
-		))).openGui(player);
-
+		GuiManager.getInstance().openModifyGui(playerData);
 		return true;
 	}
 
@@ -230,15 +229,15 @@ public class ModifyCommand implements CommandExecutor {
 
 			switch (clickedItem.getType()) {
 				case DIAMOND_HOE:
-					this.manhunt.setGameModeType(Manhunt.GameModeType.SURVIVAL);
+					this.manhunt.setGameModeType(Manhunt.GamemodeType.SURVIVAL);
 					this.manhunt.broadcast(ChatColor.GREEN + "Updated gamemode to Survival");
 					break;
 				case GRASS_BLOCK:
-					this.manhunt.setGameModeType(Manhunt.GameModeType.VANILLA);
+					this.manhunt.setGameModeType(Manhunt.GamemodeType.VANILLA);
 					this.manhunt.broadcast(ChatColor.GREEN + "Updated gamemode to default Manhunt");
 					break;
 				case SHIELD:
-					this.manhunt.setGameModeType(Manhunt.GameModeType.PRACTICE);
+					this.manhunt.setGameModeType(Manhunt.GamemodeType.PRACTICE);
 					this.manhunt.broadcast(ChatColor.GREEN + "Updated gamemode to Practice PVP");
 					break;
 				default:

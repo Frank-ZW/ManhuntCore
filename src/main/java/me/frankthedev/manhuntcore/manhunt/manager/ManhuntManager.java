@@ -1,6 +1,7 @@
 package me.frankthedev.manhuntcore.manhunt.manager;
 
 import io.papermc.lib.PaperLib;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import me.frankthedev.manhuntcore.ManhuntCore;
 import me.frankthedev.manhuntcore.data.PlayerData;
 import me.frankthedev.manhuntcore.data.manager.PlayerManager;
@@ -51,10 +52,10 @@ public class ManhuntManager {
 	}
 
 	public void createManhunt(@NotNull UUID speedrunner, @NotNull List<UUID> hunters) {
-		this.createManhunt(speedrunner, hunters, Manhunt.ManhuntType.NORMAL, Manhunt.GameModeType.VANILLA);
+		this.createManhunt(speedrunner, hunters, Manhunt.ManhuntType.NORMAL, Manhunt.GamemodeType.VANILLA);
 	}
 
-	public void createManhunt(@NotNull UUID speedrunner, @NotNull List<UUID> hunters, @NotNull Manhunt.ManhuntType manhuntType, @NotNull Manhunt.GameModeType gameModeType) {
+	public void createManhunt(@NotNull UUID speedrunner, @NotNull List<UUID> hunters, @NotNull Manhunt.ManhuntType manhuntType, @NotNull Manhunt.GamemodeType gameModeType) {
 		Manhunt manhunt = this.gameQueue.poll();
 		if (manhunt == null) {
 			manhunt = new Manhunt(speedrunner, hunters, manhuntType, gameModeType, this.getGameKeyAndIncrement());
@@ -81,7 +82,7 @@ public class ManhuntManager {
 
 	public void endManhunt(@NotNull Manhunt manhunt, boolean speedrunnerWon) {
 		manhunt.setFinished(true);
-		if (manhunt.getGameModeType() == Manhunt.GameModeType.SURVIVAL && manhunt.getTask() != null) {
+		if (manhunt.getGameModeType() == Manhunt.GamemodeType.SURVIVAL && manhunt.getTask() != null) {
 			manhunt.getTask().cancel();
 		}
 
@@ -123,7 +124,7 @@ public class ManhuntManager {
 	public void queueStartingManhunt(@NotNull UUID speedrunner, @NotNull List<UUID> hunters) {
 		Manhunt manhunt = this.gameQueue.poll();
 		if (manhunt == null) {
-			manhunt = new Manhunt(speedrunner, hunters, Manhunt.ManhuntType.NORMAL, Manhunt.GameModeType.VANILLA, this.getGameKeyAndIncrement());
+			manhunt = new Manhunt(speedrunner, hunters, Manhunt.ManhuntType.NORMAL, Manhunt.GamemodeType.VANILLA, this.getGameKeyAndIncrement());
 		} else {
 			manhunt.loadManhunt(speedrunner, hunters, this.getGameKeyAndIncrement());
 		}
@@ -184,6 +185,40 @@ public class ManhuntManager {
 		});
 	}
 
+	/**
+	 * Removes the specified player from the Manhunt game. This method works for both
+	 * speedrunner, hunters, and spectators.
+	 *
+	 * @param manhunt       The Manhunt game to be removed from.
+	 * @param playerData    The player data of the player to be removed from.
+	 */
+	public void removePlayer(@NotNull Manhunt manhunt, @NotNull PlayerData playerData) {
+		Player player = playerData.getPlayer();
+		PaperLib.teleportAsync(player, this.plugin.getLobbySpawn()).thenAccept(result -> {
+			if (result) {
+				if (manhunt.isSpectator(player.getUniqueId())) {
+					player.sendMessage(ChatColor.RED + "You have left the Manhunt game you were spectating.");
+					manhunt.removeSpectator(player.getUniqueId());
+					ObjectOpenHashSet<UUID> actives = manhunt.getActivePlayers();
+					for (UUID uniqueId : actives) {
+						Player active = Bukkit.getPlayer(uniqueId);
+						if (active != null) {
+							active.showPlayer(this.plugin, player);
+						}
+					}
+				} else {
+					player.sendMessage(ChatColor.RED + "You have left the Manhunt game.");
+					PlayerUtil.resetAttributes(player);
+					playerData.setActiveManhunt(null);
+					this.handleDisconnect(manhunt, player);
+				}
+			} else {
+				player.sendMessage(ChatColor.RED + "Failed to teleport you to the lobby. Contact an administrator if this occurs.");
+			}
+		});
+	}
+
+	@Deprecated
 	public void removeSpectator(@NotNull Player spectator, @NotNull PlayerData spectatorData) {
 		if (!spectatorData.isInSpectateManhunt()) {
 			spectator.sendMessage(ChatColor.RED + "You aren't spectating a game currently.");
@@ -194,7 +229,7 @@ public class ManhuntManager {
 		PaperLib.teleportAsync(spectator, this.plugin.getLobbySpawn()).thenAccept(result -> {
 			if (result) {
 				manhunt.removeSpectator(spectator.getUniqueId());
-				PlayerUtil.unsetSpectator(spectator, spectatorData);
+				PlayerUtil.unsetSpectator(spectator);
 				for (UUID uniqueId : manhunt.getTotalPlayers()) {
 					PlayerData playerData = PlayerManager.getInstance().getPlayerData(uniqueId);
 					if (playerData == null) {
@@ -213,28 +248,6 @@ public class ManhuntManager {
 	}
 
 	/**
-	 * Removes an active player from a Manhunt game. If the player to be removed is
-	 * a spectator, then the #removeSpectator method should be called.
-	 *
-	 * TODO: Combine #removePlayer and #removeSpectator methods
-	 *
-	 * @param manhunt       The Manhunt game to be removed from.
-	 * @param senderData    The player data of the player to be removed.
-	 */
-	public void removePlayer(@NotNull Manhunt manhunt, @NotNull PlayerData senderData) {
-		Player sender = senderData.getPlayer();
-		PaperLib.teleportAsync(sender, this.plugin.getLobbySpawn()).thenAccept(result -> {
-			if (result) {
-				senderData.setActiveManhunt(null);
-				PlayerUtil.resetAttributes(sender);
-				this.handleDisconnect(manhunt, sender);
-			} else {
-				sender.sendMessage(ChatColor.RED + "Failed to teleport you back to the lobby.");
-			}
-		});
-	}
-
-	/**
 	 * Handles player disconnection from the Manhunt game. This method should be called
 	 * when the player has left the Manhunt and cannot rejoin.
 	 *
@@ -242,11 +255,12 @@ public class ManhuntManager {
 	 * @param player    The player leaving the Manhunt game
 	 */
 	public void handleDisconnect(@NotNull Manhunt manhunt, @NotNull Player player) {
-		manhunt.broadcast(ChatColor.RED + player.getName() + " disconnected.");
 		if (manhunt.isSpeedrunner(player.getUniqueId())) {
+			manhunt.broadcast(ChatColor.RED + player.getName() + " disconnected.");
 			this.endManhunt(manhunt, false);
 		} else {
 			manhunt.removeHunter(player.getUniqueId());
+			manhunt.broadcast(ChatColor.RED + player.getName() + " disconnected.");
 			if (manhunt.getHunters().isEmpty()) {
 				this.endManhunt(manhunt, true);
 			}
