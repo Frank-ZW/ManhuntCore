@@ -42,7 +42,7 @@ public class AdvancementData {
 		return this.reward;
 	}
 
-	public BaseComponent[] getChatMessage(String playerName) {
+	public BaseComponent[] getFormattedMessage(String playerName) {
 		String pretext;
 		switch (this.advancementType) {
 			case GOAL:

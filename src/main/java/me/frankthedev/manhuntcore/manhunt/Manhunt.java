@@ -1,6 +1,7 @@
 package me.frankthedev.manhuntcore.manhunt;
 
 import io.papermc.lib.PaperLib;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import me.frankthedev.manhuntcore.ManhuntCore;
 import me.frankthedev.manhuntcore.data.AdvancementData;
@@ -18,8 +19,16 @@ import org.bukkit.advancement.Advancement;
 import org.bukkit.advancement.AdvancementProgress;
 import org.bukkit.craftbukkit.libs.org.apache.commons.io.FileUtils;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.CompassMeta;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
@@ -36,30 +45,29 @@ public class Manhunt {
 	private final ManhuntCore plugin = ManhuntCore.getInstance();
 	private UUID speedrunner;
 	private int gameKey;
-	private final Set<UUID> hunters = new HashSet<>();
-	private final Set<UUID> spectators = new HashSet<>();
-	private final Set<SpeedrunnerPerk> perks = new HashSet<>();
-	private final Set<UUID> enteredNether = new HashSet<>();
-	private final Set<UUID> enteredEnd = new HashSet<>();
-	private final Map<World.Environment, World> worlds = new HashMap<>();
+	private final ObjectOpenHashSet<UUID> hunters = new ObjectOpenHashSet<>();
+	private final ObjectOpenHashSet<UUID> spectators = new ObjectOpenHashSet<>();
+	private final ObjectOpenHashSet<UUID> total = new ObjectOpenHashSet<>();
+	private final ObjectOpenHashSet<SpeedrunnerPerk> perks = new ObjectOpenHashSet<>();
+	private final ObjectOpenHashSet<UUID> enteredNether = new ObjectOpenHashSet<>();
+	private final ObjectOpenHashSet<UUID> enteredEnd = new ObjectOpenHashSet<>();
+	private final Object2ObjectOpenHashMap<World.Environment, World> worlds = new Object2ObjectOpenHashMap<>();
 	private boolean finished;
-	private GamemodeType gameModeType;
+	private GamemodeType gamemodeType;
 	private ManhuntType manhuntType;
 	private long startTimestamp;
 	private BukkitTask task;
 
-	public Manhunt(UUID speedrunner, List<UUID> hunters, ManhuntType manhuntType, GamemodeType gameModeType, int gameKey) {
-		this(speedrunner, hunters, manhuntType, gameModeType, gameKey, System.currentTimeMillis());
-	}
-
-	public Manhunt(UUID speedrunner, List<UUID> hunters, ManhuntType manhuntType, GamemodeType gameModeType, int gameKey, long startTimestamp) {
+	public Manhunt(UUID speedrunner, List<UUID> hunters, ManhuntType manhuntType, GamemodeType gamemodeType, int gameKey) {
 		this.speedrunner = speedrunner;
 		this.gameKey = gameKey;
 		this.hunters.addAll(hunters);
 		this.manhuntType = manhuntType;
-		this.gameModeType = gameModeType;
+		this.gamemodeType = gamemodeType;
 		this.finished = false;
-		this.startTimestamp = startTimestamp;
+		this.total.add(this.speedrunner);
+		this.total.addAll(this.hunters);
+		this.total.addAll(this.spectators);
 	}
 
 	public void clearAdvancements(Player player) {
@@ -83,11 +91,9 @@ public class Manhunt {
 
 		float theta = 0.0F;
 		float delta = 360.0F / this.hunters.size();
-		int radius = Math.max(6, 3 * this.hunters.size());
+		int radius = Math.max(8, 3 * this.hunters.size());
 		Location spawn = this.getOverworld().getSpawnLocation();
-		ObjectOpenHashSet<UUID> total = this.getActivePlayers();
-		Bukkit.getLogger().info(ChatColor.GREEN + "Starting Manhunt game with " + this.hunters.size() + " hunters.");
-		for (UUID uniqueId : total) {
+		for (UUID uniqueId : this.total) {
 			PlayerData playerData = PlayerManager.getInstance().getPlayerData(uniqueId);
 			if (playerData == null) {
 				continue;
@@ -120,8 +126,8 @@ public class Manhunt {
 							}
 						}
 
-						if (this.gameModeType == GamemodeType.PRACTICE) {
-							PlayerUtil.applyKit(player, true);
+						if (this.gamemodeType == GamemodeType.PRACTICE) {
+							PlayerUtil.applyKit(player);
 						}
 					} else {
 						player.sendMessage(ChatColor.RED + "Failed to teleport you to the Manhunt game. Contact an administrator if this occurs.");
@@ -148,14 +154,15 @@ public class Manhunt {
 			}
 		}
 
-		if (this.gameModeType == GamemodeType.SURVIVAL) {
+		this.startTimestamp = System.currentTimeMillis();
+		if (this.gamemodeType == GamemodeType.SURVIVAL) {
 			this.task = this.plugin.getServer().getScheduler().runTaskLaterAsynchronously(this.plugin, () -> ManhuntManager.getInstance().endManhunt(this, true), TimeUnit.HOURS.toSeconds(1) * 20);
 		}
 	}
 
 	public void endTeleport() {
-		ObjectOpenHashSet<UUID> total = this.getTotalPlayers();
-		for (UUID uniqueId : total) {
+		ObjectOpenHashSet<UUID> actives = this.getActivePlayers();
+		for (UUID uniqueId : this.total) {
 			PlayerData playerData = PlayerManager.getInstance().getPlayerData(uniqueId);
 			if (playerData == null) {
 				continue;
@@ -177,7 +184,12 @@ public class Manhunt {
 					if (this.isSpectator(uniqueId)) {
 						PlayerUtil.unsetSpectator(player);
 						playerData.setSpectateManhunt(null);
-						this.showSpectator(player);
+						for (UUID activeUuid : actives) {
+							Player active = Bukkit.getPlayer(activeUuid);
+							if (active != null) {
+								active.showPlayer(this.plugin, player);
+							}
+						}
 					} else {
 						PlayerUtil.resetAttributes(player);
 						playerData.setActiveManhunt(null);
@@ -186,23 +198,6 @@ public class Manhunt {
 					player.sendMessage(ChatColor.RED + "Failed to teleport you back to the lobby. Contact an administrator if this occurs.");
 				}
 			});
-		}
-	}
-
-	/**
-	 * Unhides all the spectators from a Manhunt game after the game has been
-	 * ended. However if another plugin is still hiding the spectator, then
-	 * the server will not show spectator until that plugin shows them too.
-	 *
-	 * @param spectator The spectator to be shown to other players.
-	 */
-	public void showSpectator(Player spectator) {
-		ObjectOpenHashSet<UUID> actives = this.getActivePlayers();
-		for (UUID uniqueId : actives) {
-			Player player = Bukkit.getPlayer(uniqueId);
-			if (player != null) {
-				player.showPlayer(this.plugin, spectator);
-			}
 		}
 	}
 
@@ -218,7 +213,7 @@ public class Manhunt {
 				world.setAutoSave(false);
 				world.setDifficulty(Difficulty.HARD);
 				world.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
-				if (this.gameModeType == GamemodeType.SURVIVAL && environment == World.Environment.NORMAL) {
+				if (this.gamemodeType == GamemodeType.SURVIVAL && environment == World.Environment.NORMAL) {
 					WorldBorder border = world.getWorldBorder();
 					border.setCenter(world.getSpawnLocation());
 					border.setSize(500.0D);
@@ -289,28 +284,30 @@ public class Manhunt {
 		this.gameKey = gameKey;
 		this.hunters.addAll(hunters);
 		this.manhuntType = manhuntType;
-		this.gameModeType = gameModeType;
-		this.startTimestamp = System.currentTimeMillis();
+		this.gamemodeType = gameModeType;
+		this.total.add(this.speedrunner);
+		this.total.addAll(this.hunters);
 	}
 
 	public Manhunt unloadManhunt() {
 		this.speedrunner = null;
 		this.hunters.clear();
 		this.spectators.clear();
+		this.total.clear();
 		this.worlds.clear();
 		this.enteredNether.clear();
 		this.enteredEnd.clear();
 		this.perks.clear();
 		this.gameKey = Integer.MIN_VALUE;
 		this.startTimestamp = Long.MIN_VALUE;
-		this.gameModeType = GamemodeType.UNKNOWN;
-		this.manhuntType = ManhuntType.UNKNOWN;
+		this.gamemodeType = GamemodeType.VANILLA;
+		this.manhuntType = ManhuntType.NORMAL;
 		this.finished = false;
 		return this;
 	}
 
 	public void broadcast(BaseComponent[] message) {
-		this.getTotalPlayers().parallelStream().forEach(uuid -> {
+		this.getTotal().parallelStream().forEach(uuid -> {
 			Player player = this.plugin.getServer().getPlayer(uuid);
 			if (player != null) {
 				player.sendMessage(message);
@@ -319,7 +316,7 @@ public class Manhunt {
 	}
 
 	public void broadcast(String message) {
-		this.getTotalPlayers().parallelStream().forEach(uuid -> {
+		this.getTotal().parallelStream().forEach(uuid -> {
 			Player player = this.plugin.getServer().getPlayer(uuid);
 			if (player != null) {
 				player.sendMessage(message);
@@ -328,8 +325,7 @@ public class Manhunt {
 	}
 
 	public void broadcastEffectWithTitle(String message) {
-		Set<UUID> actives = this.getActivePlayers();
-		for (UUID uniqueId : actives) {
+		for (UUID uniqueId : this.total) {
 			Player player = this.plugin.getServer().getPlayer(uniqueId);
 			if (player != null) {
 				player.sendTitle(message, null, 5, 10, 5);
@@ -345,7 +341,7 @@ public class Manhunt {
 	public void displayAdvancements(Player sender, String key) {
 		AdvancementData advancementData = AdvancementUtil.getAdvancementData(key);
 		if (advancementData != null) {
-			this.broadcast(advancementData.getChatMessage(sender.getName()));
+			this.broadcast(advancementData.getFormattedMessage(sender.getName()));
 			if (advancementData.isExperience()) {
 				sender.giveExp(advancementData.getReward());
 			}
@@ -381,6 +377,59 @@ public class Manhunt {
 		return false;
 	}
 
+	public void handleEvents(Event event) {
+		if (event instanceof PlayerEvent) {
+			Player player = ((PlayerEvent) event).getPlayer();
+			if (event instanceof PlayerInteractEvent) {
+				PlayerInteractEvent e = (PlayerInteractEvent) event;
+				if (this.total.contains(player.getUniqueId()) && (e.getAction() == Action.RIGHT_CLICK_BLOCK || e.getAction() == Action.RIGHT_CLICK_AIR) && e.getItem() != null && e.getItem().getType() == Material.COMPASS) {
+					this.updatePlayerTracker(player, e.getItem());
+				}
+			} else if (event instanceof PlayerDropItemEvent) {
+				PlayerDropItemEvent e = (PlayerDropItemEvent) event;
+				if (this.isHunter(player.getUniqueId())) {
+					ItemStack drop = e.getItemDrop().getItemStack();
+					if (this.isPlayerTracker(drop)) {
+						e.setCancelled(true);
+						player.sendMessage(ChatColor.RED + "You cannot drop your player tracker!");
+					}
+				}
+			} else if (event instanceof PlayerRespawnEvent) {
+				PlayerRespawnEvent e = (PlayerRespawnEvent) event;
+				PaperLib.getBedSpawnLocationAsync(player, true).thenAccept(location -> e.setRespawnLocation(location == null ? this.getOverworld().getSpawnLocation() : location));
+				if (this.gamemodeType == GamemodeType.PRACTICE) {
+					PlayerUtil.applyKit(player);
+					return;
+				}
+
+				if (this.isHunter(player.getUniqueId())) {
+					player.getInventory().setItem(8, ItemUtil.createPlayerTracker());
+				}
+			}
+		} else if (event instanceof PlayerDeathEvent) {
+			PlayerDeathEvent e = (PlayerDeathEvent) event;
+			Player player = e.getEntity();
+			if (this.finished) {
+				e.setCancelled(true);
+				return;
+			}
+
+			this.broadcast(StringUtils.replace(e.getDeathMessage(), "[Player Tracker]", ChatColor.RED + "[" + ItemUtil.PLAYER_TRACKER + "]"));
+			e.setDeathMessage(null);
+			if (this.gamemodeType == GamemodeType.PRACTICE) {
+				e.setKeepInventory(true);
+				e.setShouldDropExperience(false);
+				return;
+			}
+
+			if (this.isSpeedrunner(player.getUniqueId())) {
+				ManhuntManager.getInstance().endManhunt(this, false);
+			} else {
+				e.getDrops().removeIf(this::isPlayerTracker);
+			}
+		}
+	}
+
 	public boolean addOrRemovePerk(SpeedrunnerPerk perk) {
 		if (!this.perks.remove(perk)) {
 			this.perks.add(perk);
@@ -414,20 +463,18 @@ public class Manhunt {
 		return this.hunters;
 	}
 
-	public ObjectOpenHashSet<UUID> getTotalPlayers() {
-		ObjectOpenHashSet<UUID> total = this.getActivePlayers();
-		total.addAll(this.spectators);
-		return total;
+	public ObjectOpenHashSet<UUID> getTotal() {
+		return this.total;
 	}
 
 	public ObjectOpenHashSet<UUID> getActivePlayers() {
-		ObjectOpenHashSet<UUID> activePlayers = new ObjectOpenHashSet<>(this.hunters);
-		activePlayers.add(this.speedrunner);
-		return activePlayers;
+		ObjectOpenHashSet<UUID> actives = new ObjectOpenHashSet<>(this.hunters);
+		actives.add(this.speedrunner);
+		return actives;
 	}
 
 	public int getNumTotalPlayers() {
-		return this.spectators.size() + this.hunters.size() + 1;
+		return this.total.size();
 	}
 
 	public Set<UUID> getSpectators() {
@@ -479,12 +526,12 @@ public class Manhunt {
 		return this.speedrunner.equals(uniqueId);
 	}
 
-	public GamemodeType getGameModeType() {
-		return this.gameModeType;
+	public GamemodeType getGamemodeType() {
+		return this.gamemodeType;
 	}
 
-	public void setGameModeType(GamemodeType gameModeType) {
-		this.gameModeType = gameModeType;
+	public void setGamemodeType(GamemodeType gameModeType) {
+		this.gamemodeType = gameModeType;
 	}
 
 	public ManhuntType getManhuntType() {
@@ -531,8 +578,7 @@ public class Manhunt {
 	public enum ManhuntType {
 		NORMAL,
 		AMPLIFIED,
-		LARGE_BIOMES,
-		UNKNOWN;
+		LARGE_BIOMES;
 
 		ManhuntType() {
 
@@ -542,8 +588,7 @@ public class Manhunt {
 	public enum GamemodeType {
 		VANILLA,
 		SURVIVAL,
-		PRACTICE,
-		UNKNOWN;
+		PRACTICE;
 
 		GamemodeType() {
 
@@ -556,6 +601,7 @@ public class Manhunt {
 		int result = 1;
 		result = result * prime + this.speedrunner.hashCode();
 		result = result * prime + this.hunters.hashCode();
+		result = result * prime + this.total.hashCode();
 		result = result * prime + this.gameKey;
 		result = result * prime + this.worlds.hashCode();
 		result = result * prime + (this.finished ? 1 : 0);
@@ -571,6 +617,7 @@ public class Manhunt {
 		Manhunt manhunt = (Manhunt) obj;
 		return this.speedrunner.equals(manhunt.getSpeedrunner()) &&
 				this.hunters.equals(manhunt.getHunters()) &&
+				this.total.equals(manhunt.getTotal()) &&
 				this.gameKey == manhunt.getGameKey() &&
 				this.worlds == manhunt.getWorlds() &&
 				this.finished == manhunt.isFinished() &&

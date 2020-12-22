@@ -3,6 +3,7 @@ package me.frankthedev.manhuntcore.data;
 import me.frankthedev.manhuntcore.manhunt.Manhunt;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 
 import java.util.UUID;
 
@@ -89,6 +90,12 @@ public class PlayerData {
 
 	public boolean isInQueuedManhunt() {
 		return this.queuedManhunt != null;
+	}
+
+	public void handleManhuntEvent(Event event) {
+		if (this.isInActiveManhunt()) {
+			this.activeManhunt.handleEvents(event);
+		}
 	}
 
 	@Override

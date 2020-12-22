@@ -7,6 +7,7 @@ import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.CompassMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
@@ -92,6 +93,23 @@ public class PlayerUtil {
 		player.removePotionEffect(PotionEffectType.INVISIBILITY);
 	}
 
+	public static void applyKit(Player player) {
+		PlayerInventory inventory = player.getInventory();
+		inventory.setHelmet(new ItemStack(Material.IRON_HELMET));
+		inventory.setChestplate(new ItemStack(Material.IRON_CHESTPLATE));
+		inventory.setLeggings(new ItemStack(Material.IRON_LEGGINGS));
+		inventory.setBoots(new ItemStack(Material.IRON_BOOTS));
+		inventory.setItem(0, new ItemStack(Material.IRON_SWORD));
+		inventory.setItem(1, new ItemStack(Material.CROSSBOW));
+		inventory.setItem(2, new ItemStack(Material.BOW));
+		inventory.setItem(3, new ItemStack(Material.IRON_AXE));
+		inventory.setItem(4, new ItemStack(Material.ARROW, 20));
+		inventory.setItem(6, new ItemStack(Material.OAK_LEAVES, 32));
+		inventory.setItem(7, new ItemStack(Material.COOKED_BEEF, 32));
+		inventory.setItemInOffHand(new ItemStack(Material.SHIELD));
+	}
+
+	@Deprecated
 	public static void applyKit(Player player, boolean isSpeedrunner) {
 		player.getInventory().setHelmet(ItemUtil.createItemStack(Material.IRON_HELMET, isSpeedrunner ? ChatColor.GREEN + "Speedrunner Helmet" : ChatColor.RED + "Hunter Helmet"));
 		player.getInventory().setChestplate(ItemUtil.createItemStack(Material.IRON_CHESTPLATE, isSpeedrunner ? ChatColor.GREEN + "Speedrunner Chestplate" : ChatColor.RED + "Hunter Chestplate"));

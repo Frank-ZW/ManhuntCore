@@ -185,7 +185,7 @@ public class SpectatorListeners implements Listener {
 					}
 
 					Manhunt manhunt = spectatorData.getSpectateManhunt();
-					Set<UUID> totalPlayers = manhunt.getTotalPlayers();
+					Set<UUID> totalPlayers = manhunt.getTotal();
 					GuiFolder folder = new GuiFolder(ChatColor.DARK_GREEN + "Teleport to any player", 9 * (int) (2 + Math.ceil(totalPlayers.size() / 9.0D)));
 					GuiPage page = new GuiPage(folder);
 					List<ItemStack> items = new ArrayList<>();

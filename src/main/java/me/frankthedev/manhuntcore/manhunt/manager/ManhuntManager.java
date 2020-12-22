@@ -82,7 +82,7 @@ public class ManhuntManager {
 
 	public void endManhunt(@NotNull Manhunt manhunt, boolean speedrunnerWon) {
 		manhunt.setFinished(true);
-		if (manhunt.getGameModeType() == Manhunt.GamemodeType.SURVIVAL && manhunt.getTask() != null) {
+		if (manhunt.getGamemodeType() == Manhunt.GamemodeType.SURVIVAL && manhunt.getTask() != null) {
 			manhunt.getTask().cancel();
 		}
 
@@ -129,7 +129,7 @@ public class ManhuntManager {
 			manhunt.loadManhunt(speedrunner, hunters, this.getGameKeyAndIncrement());
 		}
 
-		for (UUID uniqueId : manhunt.getTotalPlayers()) {
+		for (UUID uniqueId : manhunt.getTotal()) {
 			PlayerData playerData = PlayerManager.getInstance().getPlayerData(uniqueId);
 			if (playerData != null) {
 				playerData.setQueuedManhunt(manhunt);
@@ -162,7 +162,7 @@ public class ManhuntManager {
 		}
 
 		Manhunt manhunt = targetData.getActiveManhunt();
-		for (UUID uniqueId : manhunt.getTotalPlayers()) {
+		for (UUID uniqueId : manhunt.getTotal()) {
 			PlayerData playerData = PlayerManager.getInstance().getPlayerData(uniqueId);
 			if (playerData == null || manhunt.isSpectator(uniqueId)) {
 				continue;
@@ -230,7 +230,7 @@ public class ManhuntManager {
 			if (result) {
 				manhunt.removeSpectator(spectator.getUniqueId());
 				PlayerUtil.unsetSpectator(spectator);
-				for (UUID uniqueId : manhunt.getTotalPlayers()) {
+				for (UUID uniqueId : manhunt.getTotal()) {
 					PlayerData playerData = PlayerManager.getInstance().getPlayerData(uniqueId);
 					if (playerData == null) {
 						continue;

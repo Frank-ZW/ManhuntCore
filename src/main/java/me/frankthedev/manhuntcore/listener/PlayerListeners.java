@@ -1,6 +1,7 @@
 package me.frankthedev.manhuntcore.listener;
 
 import com.destroystokyo.paper.event.player.PlayerAdvancementCriterionGrantEvent;
+import io.papermc.lib.PaperLib;
 import me.frankthedev.manhuntcore.data.PlayerData;
 import me.frankthedev.manhuntcore.ManhuntCore;
 import me.frankthedev.manhuntcore.data.manager.PlayerManager;
@@ -8,18 +9,14 @@ import me.frankthedev.manhuntcore.manhunt.Manhunt;
 import me.frankthedev.manhuntcore.manhunt.manager.ManhuntManager;
 import me.frankthedev.manhuntcore.util.bukkit.ItemUtil;
 import me.frankthedev.manhuntcore.util.bukkit.PlayerUtil;
-import org.apache.commons.lang.StringUtils;
 import org.bukkit.*;
 import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.player.*;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -47,8 +44,8 @@ public class PlayerListeners implements Listener {
 	@EventHandler
 	public void onPlayerInteract(PlayerInteractEvent e) {
 		PlayerData playerData = PlayerManager.getInstance().getPlayerData(e.getPlayer());
-		if (playerData != null && playerData.isInActiveManhunt() && (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) && e.getItem() != null && e.getItem().getType() == Material.COMPASS) {
-			playerData.getActiveManhunt().updatePlayerTracker(playerData.getPlayer(), e.getItem());
+		if (playerData != null) {
+			playerData.handleManhuntEvent(e);
 		}
 	}
 
@@ -56,20 +53,8 @@ public class PlayerListeners implements Listener {
 	public void onPlayerDropItem(PlayerDropItemEvent e) {
 		Player player = e.getPlayer();
 		PlayerData playerData = PlayerManager.getInstance().getPlayerData(player);
-		if (playerData == null) {
-			return;
-		}
-
-		if (playerData.isInActiveManhunt()) {
-			Manhunt manhunt = playerData.getActiveManhunt();
-			ItemStack item = e.getItemDrop().getItemStack();
-			if (manhunt.isHunter(player.getUniqueId()) && item.getType() == Material.COMPASS) {
-				ItemMeta compassMeta = item.getItemMeta();
-				if (compassMeta != null && ItemUtil.PLAYER_TRACKER.equals(compassMeta.getDisplayName())) {
-					e.setCancelled(true);
-					player.sendMessage(ChatColor.RED + "You cannot drop your player tracker!");
-				}
-			}
+		if (playerData != null) {
+			playerData.handleManhuntEvent(e);
 		}
 	}
 
@@ -77,11 +62,9 @@ public class PlayerListeners implements Listener {
 	public void onEnderdragonDeath(EnderDragonChangePhaseEvent e) {
 		if (e.getNewPhase() == EnderDragon.Phase.DYING) {
 			Manhunt manhunt = ManhuntManager.getInstance().getManhunt(e.getEntity().getWorld());
-			if (manhunt == null) {
-				return;
+			if (manhunt != null) {
+				ManhuntManager.getInstance().endManhunt(manhunt, true);
 			}
-
-			ManhuntManager.getInstance().endManhunt(manhunt, true);
 		}
 	}
 
@@ -89,27 +72,8 @@ public class PlayerListeners implements Listener {
 	public void onPlayerDeath(PlayerDeathEvent e) {
 		Player player = e.getEntity();
 		PlayerData playerData = PlayerManager.getInstance().getPlayerData(player);
-		if (playerData == null || !playerData.isInActiveManhunt()) {
-			return;
-		}
-
-		Manhunt manhunt = playerData.getActiveManhunt();
-		if (manhunt.isFinished()) {
-			e.setCancelled(true);
-			return;
-		}
-
-		manhunt.broadcast(StringUtils.replace(e.getDeathMessage(), "[Player Tracker]", ItemUtil.PLAYER_TRACKER));
-		e.setDeathMessage("");
-		if (manhunt.getGameModeType() == Manhunt.GamemodeType.PRACTICE) {
-			e.getDrops().clear();
-			return;
-		}
-
-		if (manhunt.isSpeedrunner(player.getUniqueId())) {
-			ManhuntManager.getInstance().endManhunt(manhunt, false);
-		} else {
-			e.getDrops().removeIf(manhunt::isPlayerTracker);
+		if (playerData != null) {
+			playerData.handleManhuntEvent(e);
 		}
 	}
 
@@ -137,28 +101,8 @@ public class PlayerListeners implements Listener {
 	public void onPlayerRespawn(PlayerRespawnEvent e) {
 		Player player = e.getPlayer();
 		PlayerData playerData = PlayerManager.getInstance().getPlayerData(player);
-		if (playerData == null) {
-			return;
-		}
-
-		if (playerData.isInActiveManhunt()) {
-			Manhunt manhunt = playerData.getActiveManhunt();
-			e.setRespawnLocation(player.getBedSpawnLocation() == null ? manhunt.getOverworld().getSpawnLocation() : player.getBedSpawnLocation());
-			if (manhunt.getGameModeType() == Manhunt.GamemodeType.PRACTICE) {
-				PlayerUtil.applyKit(player, manhunt.isSpeedrunner(player.getUniqueId()));
-				return;
-			}
-
-			if (manhunt.isHunter(player.getUniqueId())) {
-				player.getInventory().setItem(8, ItemUtil.createPlayerTracker());
-			}
-			return;
-		}
-
-		if (playerData.isInSpectateManhunt()) {
-			Manhunt manhunt = playerData.getSpectateManhunt();
-			player.setGameMode(GameMode.SPECTATOR);
-			e.setRespawnLocation(manhunt.getOverworld().getSpawnLocation());
+		if (playerData != null) {
+			playerData.handleManhuntEvent(e);
 		}
 	}
 

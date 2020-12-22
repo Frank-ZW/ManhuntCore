@@ -229,15 +229,15 @@ public class ModifyCommand implements CommandExecutor {
 
 			switch (clickedItem.getType()) {
 				case DIAMOND_HOE:
-					this.manhunt.setGameModeType(Manhunt.GamemodeType.SURVIVAL);
+					this.manhunt.setGamemodeType(Manhunt.GamemodeType.SURVIVAL);
 					this.manhunt.broadcast(ChatColor.GREEN + "Updated gamemode to Survival");
 					break;
 				case GRASS_BLOCK:
-					this.manhunt.setGameModeType(Manhunt.GamemodeType.VANILLA);
+					this.manhunt.setGamemodeType(Manhunt.GamemodeType.VANILLA);
 					this.manhunt.broadcast(ChatColor.GREEN + "Updated gamemode to default Manhunt");
 					break;
 				case SHIELD:
-					this.manhunt.setGameModeType(Manhunt.GamemodeType.PRACTICE);
+					this.manhunt.setGamemodeType(Manhunt.GamemodeType.PRACTICE);
 					this.manhunt.broadcast(ChatColor.GREEN + "Updated gamemode to Practice PVP");
 					break;
 				default:
