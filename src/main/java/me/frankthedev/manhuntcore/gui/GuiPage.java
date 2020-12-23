@@ -4,7 +4,7 @@ import me.frankthedev.manhuntcore.gui.component.GuiItem;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class GuiPage {
@@ -14,7 +14,7 @@ public class GuiPage {
 
 	public GuiPage(GuiFolder folder) {
 		this.folder = folder;
-		this.items = new HashMap<>();
+		this.items = new LinkedHashMap<>();
 	}
 
 	public void updatePage() {
@@ -30,6 +30,10 @@ public class GuiPage {
 
 	public void addItem(int index, GuiItem item) {
 		this.items.put(index, item);
+	}
+
+	public void clearItems() {
+		this.items.clear();
 	}
 
 	public GuiFolder getFolder() {

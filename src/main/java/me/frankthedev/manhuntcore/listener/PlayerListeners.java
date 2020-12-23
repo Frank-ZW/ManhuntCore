@@ -1,14 +1,11 @@
 package me.frankthedev.manhuntcore.listener;
 
 import com.destroystokyo.paper.event.player.PlayerAdvancementCriterionGrantEvent;
-import io.papermc.lib.PaperLib;
 import me.frankthedev.manhuntcore.data.PlayerData;
 import me.frankthedev.manhuntcore.ManhuntCore;
 import me.frankthedev.manhuntcore.data.manager.PlayerManager;
 import me.frankthedev.manhuntcore.manhunt.Manhunt;
 import me.frankthedev.manhuntcore.manhunt.manager.ManhuntManager;
-import me.frankthedev.manhuntcore.util.bukkit.ItemUtil;
-import me.frankthedev.manhuntcore.util.bukkit.PlayerUtil;
 import org.bukkit.*;
 import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.Player;
@@ -230,63 +227,29 @@ public class PlayerListeners implements Listener {
 
 		Set<Player> recipients = new HashSet<>(e.getRecipients());
 		Iterator<Player> iterator = recipients.iterator();
+		String prefix = ChatColor.translateAlternateColorCodes('&', this.plugin.getVaultChat().getPlayerPrefix(player));
 		if (playerData.isInActiveManhunt()) {
-			Manhunt manhunt = playerData.getActiveManhunt();
-			if (manhunt.isSpeedrunner(player.getUniqueId())) {
-				e.setFormat(ChatColor.GREEN + "[GAME CHAT] " + ChatColor.stripColor(player.getDisplayName()) + ChatColor.DARK_GRAY + ChatColor.BOLD + " » " + ChatColor.RESET + ChatColor.WHITE + e.getMessage());
-			} else {
-				e.setFormat(ChatColor.GREEN + "[GAME CHAT] " + ChatColor.RED + ChatColor.stripColor(player.getDisplayName()) + ChatColor.DARK_GRAY + ChatColor.BOLD + " » " + ChatColor.RESET + ChatColor.WHITE + e.getMessage());
-			}
-
-			while (true) {
-				Player recipient;
-				PlayerData recipientData;
-				do {
-					do {
-						if (!iterator.hasNext()) {
-							return;
-						}
-
-						recipient = iterator.next();
-						recipientData = PlayerManager.getInstance().getPlayerData(recipient);
-					} while (recipientData == null);
-				} while (manhunt.equals(recipientData.getActiveManhunt()) || manhunt.equals(recipientData.getSpectateManhunt()));
-				e.getRecipients().remove(recipient);
-			}
+			e.setFormat(ChatColor.DARK_GRAY + "[" + ChatColor.GREEN + "Game Chat" + ChatColor.DARK_GRAY + "] " + prefix + " " + (playerData.getActiveManhunt().isSpeedrunner(player.getUniqueId()) ? ChatColor.GREEN : ChatColor.RED) + ChatColor.stripColor("%s") + ChatColor.DARK_GRAY + ChatColor.BOLD + " » " + ChatColor.RESET + ChatColor.WHITE + "%s");
 		} else if (playerData.isInSpectateManhunt()) {
-			e.setFormat(ChatColor.GOLD + "[SPECTATOR CHAT] " + ChatColor.BLUE + ChatColor.stripColor(player.getDisplayName()) + ChatColor.DARK_GRAY + ChatColor.BOLD + " » " + ChatColor.RESET + ChatColor.WHITE + e.getMessage());
-			while (true) {
-				Player recipient;
-				PlayerData recipientData;
-				do {
-					do {
-						if (!iterator.hasNext()) {
-							return;
-						}
-
-						recipient = iterator.next();
-						recipientData = PlayerManager.getInstance().getPlayerData(recipient);
-					} while (recipientData == null);
-				} while (playerData.getSpectateManhunt().equals(recipientData.getSpectateManhunt()));
-				e.getRecipients().remove(recipient);
-			}
+			e.setFormat(ChatColor.DARK_GRAY + "[" + ChatColor.GOLD + "Spectator Chat" + ChatColor.DARK_GRAY + "] " + prefix + " " + ChatColor.BLUE + ChatColor.stripColor("%s") + ChatColor.DARK_GRAY + ChatColor.BOLD + " » " + ChatColor.RESET + ChatColor.WHITE + "%s");
 		} else {
-			e.setFormat(ChatColor.DARK_AQUA + "[LOBBY CHAT] " + e.getFormat());
-			while (true) {
-				Player recipient;
-				PlayerData recipientData;
-				do {
-					do {
-						if (!iterator.hasNext()) {
-							return;
-						}
+			e.setFormat(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_AQUA + "Lobby Chat" + ChatColor.DARK_GRAY + "] " + e.getFormat());
+		}
 
-						recipient = iterator.next();
-						recipientData = PlayerManager.getInstance().getPlayerData(recipient);
-					} while (recipientData == null);
-				} while (!recipientData.isInSpectateManhunt() && !recipientData.isInActiveManhunt());
-				e.getRecipients().remove(recipient);
-			}
+		while (true) {
+			Player recipient;
+			PlayerData recipientData;
+			do {
+				do {
+					if (!iterator.hasNext()) {
+						return;
+					}
+
+					recipient = iterator.next();
+					recipientData = PlayerManager.getInstance().getPlayerData(recipient);
+				} while (recipientData == null);
+			} while (playerData.isInActiveManhunt() ? playerData.getActiveManhunt().equals(recipientData.getActiveManhunt()) || playerData.getActiveManhunt().equals(recipientData.getSpectateManhunt()) : (playerData.isInSpectateManhunt() ? playerData.getSpectateManhunt().equals(recipientData.getSpectateManhunt()) : !recipientData.isInActiveManhunt() && !recipientData.isInSpectateManhunt()));
+			e.getRecipients().remove(recipient);
 		}
 	}
 

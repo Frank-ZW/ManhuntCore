@@ -196,15 +196,15 @@ public class ModifyCommand implements CommandExecutor {
 			this.sender.closeInventory();
 			switch (clickedItem.getType()) {
 				case GRASS_BLOCK:
-					this.manhunt.setManhuntType(Manhunt.ManhuntType.NORMAL);
+					this.manhunt.setTerrainType(Manhunt.TerrainType.NORMAL);
 					this.manhunt.broadcast(ChatColor.GREEN + "Updated terrain generation type to Normal");
 					break;
 				case SADDLE:
-					this.manhunt.setManhuntType(Manhunt.ManhuntType.LARGE_BIOMES);
+					this.manhunt.setTerrainType(Manhunt.TerrainType.LARGE_BIOMES);
 					this.manhunt.broadcast(ChatColor.GREEN + "Updated terrain generation type to Large Biomes");
 					break;
 				case BEACON:
-					this.manhunt.setManhuntType(Manhunt.ManhuntType.AMPLIFIED);
+					this.manhunt.setTerrainType(Manhunt.TerrainType.AMPLIFIED);
 					this.manhunt.broadcast(ChatColor.GREEN + "Updated terrain generation type to Amplified");
 					break;
 				default:

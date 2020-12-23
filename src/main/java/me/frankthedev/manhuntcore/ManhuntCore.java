@@ -12,12 +12,14 @@ import me.frankthedev.manhuntcore.manhunt.manager.ManhuntManager;
 import me.frankthedev.manhuntcore.packet.manager.NMSManager;
 import me.frankthedev.manhuntcore.packet.manager.PacketManager;
 import me.frankthedev.manhuntcore.queue.manager.QueueManager;
+import net.milkbowl.vault.chat.Chat;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.event.HandlerList;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
@@ -30,6 +32,7 @@ public final class ManhuntCore extends JavaPlugin {
 	private GuiListeners guiListeners;
 	private SpectatorListeners spectatorListeners;
 	private Location lobbySpawn;
+	private Chat vaultChat;
 	private final List<CommandExecutor> commands = ImmutableList.of(
 			new SpectateCommand(),
 			new ManhuntCommand(),
@@ -45,13 +48,20 @@ public final class ManhuntCore extends JavaPlugin {
 		instance = this;
 		this.registerCommands();
 		ManhuntManager.enable(this);
+		this.saveDefaultConfig();
 		boolean shutdown = this.readConfig(true);
 		NMSManager.getInstance();
 		PacketManager.getInstance();
 		GuiManager.getInstance();
 		PlayerManager.enable(this);
 		QueueManager.enable();
-		this.saveDefaultConfig();
+		RegisteredServiceProvider<Chat> chatProvider = this.getServer().getServicesManager().getRegistration(Chat.class);
+		if (chatProvider != null) {
+			this.vaultChat = chatProvider.getProvider();
+		} else {
+			shutdown = true;
+		}
+
 		this.playerListeners = new PlayerListeners(this);
 		this.guiListeners = new GuiListeners();
 		this.spectatorListeners = new SpectatorListeners();
@@ -166,6 +176,10 @@ public final class ManhuntCore extends JavaPlugin {
 
 	public void setLobbySpawn(Location lobbySpawn) {
 		this.lobbySpawn = lobbySpawn;
+	}
+
+	public Chat getVaultChat() {
+		return this.vaultChat;
 	}
 
 	public static ManhuntCore getInstance() {

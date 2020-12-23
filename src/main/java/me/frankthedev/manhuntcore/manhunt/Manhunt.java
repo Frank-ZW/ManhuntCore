@@ -28,7 +28,6 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.CompassMeta;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
@@ -54,15 +53,15 @@ public class Manhunt {
 	private final Object2ObjectOpenHashMap<World.Environment, World> worlds = new Object2ObjectOpenHashMap<>();
 	private boolean finished;
 	private GamemodeType gamemodeType;
-	private ManhuntType manhuntType;
+	private TerrainType terrainType;
 	private long startTimestamp;
 	private BukkitTask task;
 
-	public Manhunt(UUID speedrunner, List<UUID> hunters, ManhuntType manhuntType, GamemodeType gamemodeType, int gameKey) {
+	public Manhunt(UUID speedrunner, List<UUID> hunters, TerrainType terrainType, GamemodeType gamemodeType, int gameKey) {
 		this.speedrunner = speedrunner;
 		this.gameKey = gameKey;
 		this.hunters.addAll(hunters);
-		this.manhuntType = manhuntType;
+		this.terrainType = terrainType;
 		this.gamemodeType = gamemodeType;
 		this.finished = false;
 		this.total.add(this.speedrunner);
@@ -206,7 +205,7 @@ public class Manhunt {
 			World.Environment environment = World.Environment.values()[i];
 			WorldCreator creator = new WorldCreator(gameKey + "_" + StringUtils.lowerCase(String.valueOf(environment)));
 			creator.environment(environment);
-			creator.type(this.manhuntType == ManhuntType.AMPLIFIED ? WorldType.AMPLIFIED: (this.manhuntType == ManhuntType.LARGE_BIOMES ? WorldType.LARGE_BIOMES : WorldType.NORMAL));
+			creator.type(this.terrainType == TerrainType.AMPLIFIED ? WorldType.AMPLIFIED: (this.terrainType == TerrainType.LARGE_BIOMES ? WorldType.LARGE_BIOMES : WorldType.NORMAL));
 			World world = creator.createWorld();
 			if (world != null) {
 				world.setKeepSpawnInMemory(false);
@@ -227,13 +226,10 @@ public class Manhunt {
 	}
 
 	public void deleteWorlds() {
-		for (World world : this.worlds.values()) {
-			Bukkit.unloadWorld(world, false);
-		}
-
-		Bukkit.getScheduler().runTaskLaterAsynchronously(this.plugin, () -> {
+		Bukkit.getScheduler().runTaskLater(this.plugin, () -> {
 			try {
 				for (World world : this.worlds.values()) {
+					Bukkit.unloadWorld(world, false);
 					FileUtils.deleteDirectory(world.getWorldFolder());
 				}
 			} catch (IOException e) {
@@ -276,14 +272,14 @@ public class Manhunt {
 	}
 
 	public void loadManhunt(UUID speedrunner, List<UUID> hunters, int gameKey) {
-		this.loadManhunt(speedrunner, hunters, gameKey, ManhuntType.NORMAL, GamemodeType.VANILLA);
+		this.loadManhunt(speedrunner, hunters, gameKey, TerrainType.NORMAL, GamemodeType.VANILLA);
 	}
 
-	public void loadManhunt(UUID speedrunners, List<UUID> hunters, int gameKey, ManhuntType manhuntType, GamemodeType gameModeType) {
+	public void loadManhunt(UUID speedrunners, List<UUID> hunters, int gameKey, TerrainType terrainType, GamemodeType gameModeType) {
 		this.speedrunner = speedrunners;
 		this.gameKey = gameKey;
 		this.hunters.addAll(hunters);
-		this.manhuntType = manhuntType;
+		this.terrainType = terrainType;
 		this.gamemodeType = gameModeType;
 		this.total.add(this.speedrunner);
 		this.total.addAll(this.hunters);
@@ -301,7 +297,7 @@ public class Manhunt {
 		this.gameKey = Integer.MIN_VALUE;
 		this.startTimestamp = Long.MIN_VALUE;
 		this.gamemodeType = GamemodeType.VANILLA;
-		this.manhuntType = ManhuntType.NORMAL;
+		this.terrainType = TerrainType.NORMAL;
 		this.finished = false;
 		return this;
 	}
@@ -441,10 +437,12 @@ public class Manhunt {
 
 	public void addSpectator(UUID uniqueId) {
 		this.spectators.add(uniqueId);
+		this.total.add(uniqueId);
 	}
 
 	public void removeSpectator(UUID uniqueId) {
 		this.spectators.remove(uniqueId);
+		this.total.remove(uniqueId);
 	}
 
 	public boolean isSpectator(UUID uniqueId) {
@@ -457,6 +455,7 @@ public class Manhunt {
 
 	public void removeHunter(UUID uniqueId) {
 		this.hunters.remove(uniqueId);
+		this.total.remove(uniqueId);
 	}
 
 	public Set<UUID> getHunters() {
@@ -534,12 +533,12 @@ public class Manhunt {
 		this.gamemodeType = gameModeType;
 	}
 
-	public ManhuntType getManhuntType() {
-		return this.manhuntType;
+	public TerrainType getTerrainType() {
+		return this.terrainType;
 	}
 
-	public void setManhuntType(ManhuntType manhuntType) {
-		this.manhuntType = manhuntType;
+	public void setTerrainType(TerrainType terrainType) {
+		this.terrainType = terrainType;
 	}
 
 	public Set<SpeedrunnerPerk> getPerks() {
@@ -575,12 +574,12 @@ public class Manhunt {
 		}
 	}
 
-	public enum ManhuntType {
+	public enum TerrainType {
 		NORMAL,
 		AMPLIFIED,
 		LARGE_BIOMES;
 
-		ManhuntType() {
+		TerrainType() {
 
 		}
 	}

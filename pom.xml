@@ -6,7 +6,7 @@
 
     <groupId>me.frankthedev</groupId>
     <artifactId>ManhuntCore</artifactId>
-    <version>Alpha v1.4.2.12</version>
+    <version>Alpha v1.4.3.2</version>
     <packaging>jar</packaging>
     <name>ManhuntCore</name>
     <properties>
@@ -60,6 +60,10 @@
             <id>destroystokyo-repo</id>
             <url>https://repo.destroystokyo.com/repository/maven-public//</url>
         </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -91,6 +95,12 @@
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
             <version>18.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.MilkBowl</groupId>
+            <artifactId>VaultAPI</artifactId>
+            <version>1.7</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>

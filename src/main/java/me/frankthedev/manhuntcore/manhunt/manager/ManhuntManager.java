@@ -52,13 +52,13 @@ public class ManhuntManager {
 	}
 
 	public void createManhunt(@NotNull UUID speedrunner, @NotNull List<UUID> hunters) {
-		this.createManhunt(speedrunner, hunters, Manhunt.ManhuntType.NORMAL, Manhunt.GamemodeType.VANILLA);
+		this.createManhunt(speedrunner, hunters, Manhunt.TerrainType.NORMAL, Manhunt.GamemodeType.VANILLA);
 	}
 
-	public void createManhunt(@NotNull UUID speedrunner, @NotNull List<UUID> hunters, @NotNull Manhunt.ManhuntType manhuntType, @NotNull Manhunt.GamemodeType gameModeType) {
+	public void createManhunt(@NotNull UUID speedrunner, @NotNull List<UUID> hunters, @NotNull Manhunt.TerrainType terrainType, @NotNull Manhunt.GamemodeType gameModeType) {
 		Manhunt manhunt = this.gameQueue.poll();
 		if (manhunt == null) {
-			manhunt = new Manhunt(speedrunner, hunters, manhuntType, gameModeType, this.getGameKeyAndIncrement());
+			manhunt = new Manhunt(speedrunner, hunters, terrainType, gameModeType, this.getGameKeyAndIncrement());
 		} else {
 			manhunt.loadManhunt(speedrunner, hunters, this.getGameKeyAndIncrement());
 		}
@@ -124,7 +124,7 @@ public class ManhuntManager {
 	public void queueStartingManhunt(@NotNull UUID speedrunner, @NotNull List<UUID> hunters) {
 		Manhunt manhunt = this.gameQueue.poll();
 		if (manhunt == null) {
-			manhunt = new Manhunt(speedrunner, hunters, Manhunt.ManhuntType.NORMAL, Manhunt.GamemodeType.VANILLA, this.getGameKeyAndIncrement());
+			manhunt = new Manhunt(speedrunner, hunters, Manhunt.TerrainType.NORMAL, Manhunt.GamemodeType.VANILLA, this.getGameKeyAndIncrement());
 		} else {
 			manhunt.loadManhunt(speedrunner, hunters, this.getGameKeyAndIncrement());
 		}
@@ -256,7 +256,6 @@ public class ManhuntManager {
 	 */
 	public void handleDisconnect(@NotNull Manhunt manhunt, @NotNull Player player) {
 		if (manhunt.isSpeedrunner(player.getUniqueId())) {
-			manhunt.broadcast(ChatColor.RED + player.getName() + " disconnected.");
 			this.endManhunt(manhunt, false);
 		} else {
 			manhunt.removeHunter(player.getUniqueId());

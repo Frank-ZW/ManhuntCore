@@ -9,7 +9,6 @@ import me.frankthedev.manhuntcore.gui.component.ManhuntGuiClickable;
 import me.frankthedev.manhuntcore.manhunt.Manhunt;
 import me.frankthedev.manhuntcore.util.bukkit.ItemUtil;
 import me.frankthedev.manhuntcore.util.java.TreeNode;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -27,7 +26,6 @@ public class GuiManager {
 	private final Map<UUID, GuiFolder> folders;
 	private final Map<UUID, TreeNode> playerNodes;
 	private final Map<ItemStack, TreeNode> modifyTree;
-
 	private static GuiManager instance;
 
 	public GuiManager() {
@@ -53,13 +51,21 @@ public class GuiManager {
 
 		mutable.clear();
 		mutable.put(10, ItemUtil.createItemStack(Material.GRASS_BLOCK, ChatColor.GREEN + "Vanilla"));
-		mutable.put(13, ItemUtil.createItemStack(Material.DIAMOND_HOE, ChatColor.GREEN + "Survival"));
-		mutable.put(16, ItemUtil.createItemStack(Material.SHIELD, ChatColor.GREEN + "Practice"));
+		mutable.put(12, ItemUtil.createItemStack(Material.DIAMOND_HOE, ChatColor.GREEN + "Survival"));
+		mutable.put(14, ItemUtil.createItemStack(Material.SHIELD, ChatColor.GREEN + "Practice"));
+		mutable.put(16, ItemUtil.createItemStack(Material.DIAMOND_HELMET, ChatColor.GREEN + "Juggernaut"));
 		mutable.put(22, ItemUtil.createItemStack(Material.ARROW, ChatColor.RED + "Go back"));
 		node.setItems(Maps.newLinkedHashMap(mutable));
 		this.modifyTree.put(ItemUtil.createItemStack(Material.DIAMOND_SWORD, ChatColor.GREEN + "Manhunt Gamemode"), node);
 
-		this.modifyTree.put(ItemUtil.createItemStack(Material.DIAMOND_PICKAXE, ChatColor.GREEN + "Speedrunner Perks"), null);
+		mutable.clear();
+		mutable.put(10, ItemUtil.createItemStack(Material.LINGERING_POTION, ChatColor.GREEN + "Potion Buffs"));
+		mutable.put(12, ItemUtil.createItemStack(Material.DIRT, ChatColor.GREEN + "Blocks"));
+		mutable.put(14, ItemUtil.createItemStack(Material.WOODEN_PICKAXE, ChatColor.GREEN + "Tools and Items", ChatColor.BLUE + "Spawn with items."));
+		mutable.put(16, ItemUtil.createItemStack(Material.BONE, ChatColor.GREEN + "Wolf", ChatColor.BLUE + "Spawn with a tamed wolf"));
+		mutable.put(22, ItemUtil.createItemStack(Material.ARROW, ChatColor.RED + "Go back"));
+		node.setItems(Maps.newLinkedHashMap(mutable));
+		this.modifyTree.put(ItemUtil.createItemStack(Material.DIAMOND_PICKAXE, ChatColor.GREEN + "Speedrunner Perks"), node);
 	}
 
 	public static GuiManager getInstance() {
@@ -100,9 +106,8 @@ public class GuiManager {
 		this.folders.put(uniqueId, folder);
 	}
 
-	public void removeFolder(UUID uniqueId) {
+	public void removeFolder(@NotNull UUID uniqueId) {
 		this.folders.remove(uniqueId);
-		Bukkit.broadcastMessage(ChatColor.RED + "Removed folder");
 	}
 
 	public void openModifyGui(PlayerData senderData) {
@@ -142,11 +147,10 @@ public class GuiManager {
 
 		Map<Integer, ItemStack> items = child.getItems();
 		List<ItemStack> itemList = items.values().stream().map(ItemStack::clone).collect(Collectors.toList());
-		Bukkit.broadcastMessage("Items: " + itemList);
+		page.clearItems();
 		try {
 			TreeSet<Integer> sorted = new TreeSet<>(items.keySet());
 			for (int index : sorted) {
-				Bukkit.getLogger().info("Index: " + index);
 				page.addItem(index, clazz.asSubclass(ManhuntGuiClickable.class).getConstructor(Manhunt.class, Player.class, List.class).newInstance(manhunt, sender.getPlayer(), itemList));
 			}
 		} catch (ReflectiveOperationException e) {
@@ -157,5 +161,23 @@ public class GuiManager {
 		folder.openGui(sender.getPlayer(), 1);
 		this.playerNodes.put(sender.getUniqueId(), child);
 		this.folders.put(sender.getUniqueId(), folder);
+	}
+
+	public void previousGui(@NotNull Player sender) {
+		GuiFolder folder = this.folders.get(sender.getUniqueId());
+		if (folder == null) {
+			return;
+		}
+
+		TreeNode child = this.playerNodes.get(sender.getUniqueId());
+		if (child == null) {
+			return;
+		}
+
+		TreeNode parent = child.getParent();
+		Map<Material, TreeNode> children = parent.getChildren();
+		for (Map.Entry<Material, TreeNode> entry : children.entrySet()) {
+
+		}
 	}
 }

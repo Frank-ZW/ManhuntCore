@@ -27,8 +27,7 @@ public class GuiListeners implements Listener {
 
 	@EventHandler
 	public void onInventoryClose(InventoryCloseEvent e) {
-		if (e.getReason() != InventoryCloseEvent.Reason.PLUGIN) {
-			GuiManager.getInstance().removeFolder(e.getPlayer().getUniqueId());
-		}
+		e.getPlayer().sendMessage(e.getReason() + "");
+		GuiManager.getInstance().removeFolder(e.getPlayer().getUniqueId());
 	}
 }
